@@ -15,7 +15,7 @@ This repository contains a PyTorch implementation of "CNN-GNN Convolution Bridge
 ### Running the code
 
 ## Node classification on real-world datasets (./NodeClassification)
-We evaluate the performance of GraInc against the competitors on 9 real-world datasets.
+We evaluate the performance of GraInc against the competitors on 9 real-world datasets.(Cora, Citeseer, PubMed, Computers, Photo, Actor, Texas, Cornell, OGBN-Arxiv)
 
 ### Datasets
 We provide the datasets in the folder './NodeClassification/data' and you can run the code directly, or you can choose not to download the datasets('./NodeClassification/data') here. The code will automatically build the datasets through the data loader of Pytorch Geometric.
@@ -37,7 +37,9 @@ python training.py --net=GraInc_Arxiv  --dataset ogbn-arxiv --lr 0.002 --dprate 
 ```
 
 ## Graph classification on real-world datasets (./NodeClassification)
-We evaluate the performance of GraU-Net against the competitors on 8 real-world datasets.
+We evaluate the performance of GraU-Net against the competitors on 8 real-world datasets.(DD, PROTEINS, NCI1, MUTAG, COLLAB, REDDIT-IMDB, IMDB-BINARY, IMDB-MULTI)
+    - 
+
 
 ### Datasets
 We provide the datasets in the folder './GraphClassification/data' and you can run the code directly, or you can choose not to download the datasets('./GraphClassification/data') here. The code will automatically build the datasets through the data loader of Pytorch Geometric.
