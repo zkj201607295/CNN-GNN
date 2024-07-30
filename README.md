@@ -12,10 +12,6 @@ This repository contains a PyTorch implementation of "CNN-GNN Convolution Bridge
 - seaborn 0.11.1
 - scikit-learn 0.24.1
 
-
-### Datasets
-We provide the processed dataset and you can run the code directly.
-
 ### Running the code
 
 ## Node classification on real-world datasets (./NodeClassification)
@@ -48,22 +44,13 @@ We provide the datasets in the folder './GraphClassification/data' and you can r
 
 ### Running the code
 
-You can run the following script in the folder './GraphClassification' directly and this script describes the hyperparameters settings of GraInc on each dataset.
-+ Pubmed
+You can run the following script in the folder './GraphClassification' directly and all the hyperparameters settings of GraphU-Net on each dataset are the same.
++ All datasets
 ```sh
-python training.py --net=GraInc  --dataset Photo --lr 0.01 --dprate 0.5 --dropout 0.5  --train_rate 0.6 --val_rate 0.2 --early_stopping 200
-```
-+ Actor
-```sh
-python training.py --net=GraInc  --dataset Actor --lr 0.01 --dprate 0.9 --dropout 0.5  --train_rate 0.6 --val_rate 0.2 --early_stopping 100
-```
-+ OGBN-Arxiv
-```sh
-python training.py --net=GraInc_Arxiv  --dataset ogbn-arxiv --lr 0.002 --dprate 0.5 --dropout 0.1 --early_stopping 600
+python main.py
 ```
 
 ## Citation
-
 
 ## Contact
 
