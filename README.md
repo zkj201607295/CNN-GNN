@@ -19,25 +19,47 @@ We provide the processed dataset and you can run the code directly.
 ### Running the code
 
 ## Node classification on real-world datasets (./NodeClassification)
-We evaluate the performance of TSCNet against the competitors on 10 real-world datasets.
+We evaluate the performance of GraInc against the competitors on 9 real-world datasets.
 
 ### Datasets
 We provide the datasets in the folder './NodeClassification/data' and you can run the code directly, or you can choose not to download the datasets('./NodeClassification/data') here. The code will automatically build the datasets through the data loader of Pytorch Geometric.
 
 ### Running the code
 
-You can run the following script in the folder './NodeClassification' directly and this script describes the hyperparameters settings of TSCNet on each dataset.
-```sh
-sh run.sh
-```
-or run the following Command 
+You can run the following script in the folder './NodeClassification' directly and this script describes the hyperparameters settings of GraInc on each dataset.
 + Pubmed
 ```sh
-python training_batch.py  --dataset Pubmed --lr 0.01 --dprate 0.5 --dropout 0.0  --train_rate 0.6 --val_rate 0.2 --early_stopping 200
+python training.py --net=GraInc  --dataset Photo --lr 0.01 --dprate 0.5 --dropout 0.5  --train_rate 0.6 --val_rate 0.2 --early_stopping 200
 ```
-+ Texas
++ Actor
 ```sh
-python training_batch.py  --dataset Texas --lr 0.03 --dprate 0.6 --dropout 0.9  --train_rate 0.6 --val_rate 0.2 --early_stopping 100
+python training.py --net=GraInc  --dataset Actor --lr 0.01 --dprate 0.9 --dropout 0.5  --train_rate 0.6 --val_rate 0.2 --early_stopping 100
+```
++ OGBN-Arxiv
+```sh
+python training.py --net=GraInc_Arxiv  --dataset ogbn-arxiv --lr 0.002 --dprate 0.5 --dropout 0.1 --early_stopping 600
+```
+
+## Graph classification on real-world datasets (./NodeClassification)
+We evaluate the performance of GraU-Net against the competitors on 8 real-world datasets.
+
+### Datasets
+We provide the datasets in the folder './GraphClassification/data' and you can run the code directly, or you can choose not to download the datasets('./GraphClassification/data') here. The code will automatically build the datasets through the data loader of Pytorch Geometric.
+
+### Running the code
+
+You can run the following script in the folder './GraphClassification' directly and this script describes the hyperparameters settings of GraInc on each dataset.
++ Pubmed
+```sh
+python training.py --net=GraInc  --dataset Photo --lr 0.01 --dprate 0.5 --dropout 0.5  --train_rate 0.6 --val_rate 0.2 --early_stopping 200
+```
++ Actor
+```sh
+python training.py --net=GraInc  --dataset Actor --lr 0.01 --dprate 0.9 --dropout 0.5  --train_rate 0.6 --val_rate 0.2 --early_stopping 100
+```
++ OGBN-Arxiv
+```sh
+python training.py --net=GraInc_Arxiv  --dataset ogbn-arxiv --lr 0.002 --dprate 0.5 --dropout 0.1 --early_stopping 600
 ```
 
 ## Citation
