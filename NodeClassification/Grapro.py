@@ -20,19 +20,24 @@ class Gra_inc(MessagePassing):
         self.temp = Parameter(torch.Tensor(self.K + 1))
         #self.temp = [1.427, 3.069, 3.548]
         self.reset_parameters()
+        self._cached = None
 
     def reset_parameters(self):
         self.temp.data.fill_(1)
+        self._cached = None
 
     def forward(self, x, edge_index, edge_weight=None):
         #TEMP = F.relu(self.temp)
         TEMP = self.temp
-
-        # L=I-D^(-0.5)AD^(-0.5)
-        edge_index1, norm1 = get_laplacian(edge_index, edge_weight, normalization='sym', dtype=x.dtype,
-                                           num_nodes=x.size(self.node_dim))
-        # 2I-L
-        edge_index2, norm2 = add_self_loops(edge_index1, -norm1, fill_value=2., num_nodes=x.size(self.node_dim))
+        if self._cached is None:
+            # L=I-D^(-0.5)AD^(-0.5)
+            edge_index1, norm1 = get_laplacian(edge_index, edge_weight, normalization='sym', dtype=x.dtype,
+                                               num_nodes=x.size(self.node_dim))
+            # 2I-L
+            edge_index2, norm2 = add_self_loops(edge_index1, -norm1, fill_value=2., num_nodes=x.size(self.node_dim))
+            self._cached = (edge_index2, norm2)
+        else:
+            edge_index2, norm2 = self._cached[0], self._cached[1]
 
         tmp = []
         tmp.append(x)
