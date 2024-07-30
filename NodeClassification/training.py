@@ -1,6 +1,6 @@
 import argparse
 from dataset_loader import DataLoader
-from utils import random_planetoid_splits
+from utils import *
 from models import *
 import torch
 import torch.nn.functional as F
@@ -9,14 +9,27 @@ import random
 import seaborn as sns
 import numpy as np
 import time
+from sklearn.metrics import f1_score, accuracy_score
+from torch_geometric.utils import to_undirected
+import matplotlib.pyplot as plt
+from sklearn.decomposition import PCA
+import umap
 
 def RunExp(args, dataset, data, Net, percls_trn, val_lb):
 
     def train(model, optimizer, data, dprate):
+        # apply augmentation
+
+        # feedforward
+        #y = model(data)
+
+        # get rid of slow nodes
+        #y = y[~data.slow_node_mask]
+
         model.train()
         optimizer.zero_grad()
         out = model(data)[data.train_mask]
-        nll = F.nll_loss(out, data.y[data.train_mask])
+        nll = F.nll_loss(out, data.y[data.train_mask].view(-1))
         loss = nll
         reg_loss=None
         #loss.backward()
@@ -27,22 +40,32 @@ def RunExp(args, dataset, data, Net, percls_trn, val_lb):
     def test(model, data):
         model.eval()
         logits, accs, losses, preds = model(data), [], [], []
+        i = 0
         for _, mask in data('train_mask', 'val_mask', 'test_mask'):
-            pred = logits[mask].max(1)[1]
-            acc = pred.eq(data.y[mask]).sum().item() / mask.sum().item()
+            pred = logits[mask].argmax(dim=-1)
+            #acc = pred.eq(y).sum().item() / mask.detach().cpu().sum().item()
+            acc = accuracy_score(data.y[mask].cpu(), pred.cpu())
 
-            loss = F.nll_loss(model(data)[mask], data.y[mask])
-            preds.append(pred.detach().cpu())
+            loss = F.nll_loss(logits[mask], data.y[mask].view(-1))
+            preds.append(pred)
             accs.append(acc)
             losses.append(loss.detach().cpu())
+
         return accs, preds, losses
 
     device = torch.device('cuda:'+str(args.device) if torch.cuda.is_available() else 'cpu')
     tmp_net = Net(dataset, args)
 
     #randomly split dataset
-    permute_masks = random_planetoid_splits
-    data = permute_masks(data, dataset.num_classes, percls_trn, val_lb,args.seed)
+    if args.dataset == "ogbn-arxiv":
+        split_idx = dataset.get_idx_split()
+        train_idx, valid_idx, test_idx = split_idx["train"], split_idx["valid"], split_idx["test"]
+        data.train_mask = index_to_mask(train_idx, size=data.num_nodes)
+        data.val_mask = index_to_mask(valid_idx, size=data.num_nodes)
+        data.test_mask = index_to_mask(test_idx, size=data.num_nodes)
+    else :
+        permute_masks = random_planetoid_splits
+        data = permute_masks(data, dataset.num_classes, percls_trn, val_lb,args.seed)
 
     model, data = tmp_net.to(device), data.to(device)
 
@@ -70,8 +93,7 @@ def RunExp(args, dataset, data, Net, percls_trn, val_lb):
         time_epoch=time.time()-t_st  # each epoch train times
         time_run.append(time_epoch)
 
-        [train_acc, val_acc, tmp_test_acc], preds, [
-            train_loss, val_loss, tmp_test_loss] = test(model, data)
+        [train_acc, val_acc, tmp_test_acc], preds, [train_loss, val_loss, tmp_test_loss] = test(model, data)
 
         #print(train_acc)
         #print(val_acc)
@@ -87,6 +109,9 @@ def RunExp(args, dataset, data, Net, percls_trn, val_lb):
                 theta = torch.relu(theta).numpy()
             else:
                 theta = args.alpha
+
+        #if epoch % 10 == 0:
+            #print(f'epoch = {epoch} \t train_loss = {train_loss:.4f} \t val loss = {val_loss:.4f} \t test loss = {tmp_test_loss:.4f} \t train acc = {train_acc:.4f} \t test acc = {tmp_test_acc:.4f}')
 
         if epoch >= 0:
             val_loss_history.append(val_loss)
@@ -117,11 +142,11 @@ if __name__ == '__main__':
     parser.add_argument('--Init', type=str,choices=['SGC', 'PPR', 'NPPR', 'Random', 'WS', 'Null'], default='PPR', help='initialization for GPRGNN.')
     parser.add_argument('--heads', default=8, type=int, help='attention heads for GAT.')
     parser.add_argument('--output_heads', default=1, type=int, help='output_heads for GAT.')
-    parser.add_argument('--dataset', type=str, choices=['Cora','Citeseer','Pubmed','Computers','Photo','Chameleon','Squirrel','Actor','Texas','Cornell'],
-                        default='Computers')
+    parser.add_argument('--dataset', type=str, choices=['Cora','Citeseer','Pubmed','Computers','Photo','Chameleon','Squirrel','Actor','Texas','Cornell', 'CS', 'Physics','ogbn-arxiv'],
+                        default='Photo')
     parser.add_argument('--device', type=int, default=0, help='GPU device.')
     parser.add_argument('--runs', type=int, default=10, help='number of runs.')
-    parser.add_argument('--net', type=str, choices=['GCN', 'GAT', 'APPNP', 'ChebNet', 'GPRGNN','BernNet','MLP','GraInc','AFGCN','SIGN','FAGCN','SGC','GraphSAGE','ConvG', 'AntiS', 'DirGNN'], default='GraInc')
+    parser.add_argument('--net', type=str, choices=['GCN', 'GAT', 'APPNP', 'ChebNet', 'GPRGNN','BernNet','MLP','GraInc','AFGCN','SIGN','FAGCN','SGC','GraphSAGE','ConvG', 'AntiS', 'DirGNN', 'GraInc_Arxiv', 'GCN_Arxiv', 'GONN', 'M2MGNN', 'Mixhop', 'GraphConv'], default='ConvG')
     parser.add_argument('--Bern_lr', type=float, default=0.01, help='learning rate for BernNet propagation layer.')
     parser.add_argument('--Inc1', type=int, default=1, help='1*1 Receive Field.')
     parser.add_argument('--Inc2', type=int, default=2, help='1*2 Receive Field.')
@@ -167,7 +192,16 @@ if __name__ == '__main__':
         Net = AntiSymmetric_Net
     elif gnn_name == "DirGNN":
         Net = DirGNN
-
+    elif gnn_name == "GraInc_Arxiv":
+        Net = GraInc_Arxiv
+    elif gnn_name == "GCN_Arxiv":
+        Net = GCN_Arxiv
+    elif gnn_name == "M2MGNN":
+        Net = M2MGNN
+    elif gnn_name == "Mixhop":
+        Net = Mixhop_Net
+    elif gnn_name == "GraphConv":
+        Net = GraphConv_Net
     dataset = DataLoader(args.dataset)
     data = dataset[0]
     #print(data)
